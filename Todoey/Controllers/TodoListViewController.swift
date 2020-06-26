@@ -9,16 +9,16 @@
 import UIKit
 
 class TodoListViewController: UITableViewController {
-    var itemArray: [Item] = [
-        Item(title: "Find Mike"),
-        Item(title: "Buy Eggos"),
-        Item(title: "Destroy Demogorgon")
-    ]
-    
-    let defaults = UserDefaults()
+    var itemArray: [Item] = [Item]()
+    var dataFilePath: URL? = nil
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        if let filePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            dataFilePath = filePath.appendingPathComponent("Items.plist")
+            print(dataFilePath!)
+            loadItems()
+        }
     }
     
     //MARK: - Table View Data Source methods
@@ -41,9 +41,11 @@ class TodoListViewController: UITableViewController {
         guard let selectedCell = tableView.cellForRow(at: indexPath) else { return }
         selectedCell.accessoryType = (item.isDone()) ? .checkmark : .none
         tableView.deselectRow(at: indexPath, animated: true)
+        saveItems()
     }
     
     //MARK: - Nav Add Button Item method
+    
     @IBAction func addItemPressed(_ sender: UIBarButtonItem) {
         var tField = UITextField()
         let alertVC = UIAlertController(title: "Add new Todo Item", message: "", preferredStyle: .alert)
@@ -52,6 +54,7 @@ class TodoListViewController: UITableViewController {
                 guard let todoItem = tField.text else { return }
                 let item = Item(title: todoItem)
                 self.itemArray.append(item)
+                self.saveItems()
                 self.tableView.reloadData()
             }
         }
@@ -61,5 +64,27 @@ class TodoListViewController: UITableViewController {
         }
         alertVC.addAction(action)
         present(alertVC, animated: true, completion: nil)
+    }
+    
+    func saveItems() {
+        let encoder = PropertyListEncoder()
+        do {
+            let data = try encoder.encode(self.itemArray)
+            guard let filePath = self.dataFilePath else { return }
+            try data.write(to: filePath)
+        } catch {
+            print(error)
+        }
+    }
+    
+    func loadItems() {
+        guard let dataFilePath = dataFilePath else { return }
+        do {
+            guard let data = try? Data(contentsOf: dataFilePath) else { return }
+            let decoder = PropertyListDecoder()
+            itemArray = try decoder.decode([Item].self, from: data)
+        } catch {
+            print("Error loading items: \(error)")
+        }
     }
 }
