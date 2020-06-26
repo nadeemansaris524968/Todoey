@@ -7,18 +7,17 @@
 //
 
 import UIKit
+import CoreData
 
 class TodoListViewController: UITableViewController {
     var itemArray: [Item] = [Item]()
     var dataFilePath: URL? = nil
+    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        if let filePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-            dataFilePath = filePath.appendingPathComponent("Items.plist")
-            print(dataFilePath!)
-            loadItems()
-        }
+        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
+        loadItems()
     }
     
     //MARK: - Table View Data Source methods
@@ -29,30 +28,33 @@ class TodoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TodoItemCell", for: indexPath)
         let item = itemArray[indexPath.row]
-        cell.textLabel?.text = item.getTitle()
-        cell.accessoryType = (item.isDone()) ? .checkmark : .none
+        cell.textLabel?.text = item.title
+        cell.accessoryType = (item.done) ? .checkmark : .none
         return cell
     }
     
     //MARK: - Table View Delegate methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let item = itemArray[indexPath.row]
-        item.toggle()
+        item.done = !item.done
         guard let selectedCell = tableView.cellForRow(at: indexPath) else { return }
-        selectedCell.accessoryType = (item.isDone()) ? .checkmark : .none
+        selectedCell.accessoryType = (item.done) ? .checkmark : .none
         tableView.deselectRow(at: indexPath, animated: true)
         saveItems()
     }
     
     //MARK: - Nav Add Button Item method
-    
     @IBAction func addItemPressed(_ sender: UIBarButtonItem) {
         var tField = UITextField()
         let alertVC = UIAlertController(title: "Add new Todo Item", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add", style: .default) { (action) in
             if tField.text?.trimmingCharacters(in: .whitespacesAndNewlines) != "" {
                 guard let todoItem = tField.text else { return }
-                let item = Item(title: todoItem)
+                
+                let item = Item(context: self.context)
+                item.title = todoItem
+                item.done = false
+                
                 self.itemArray.append(item)
                 self.saveItems()
                 self.tableView.reloadData()
@@ -67,24 +69,19 @@ class TodoListViewController: UITableViewController {
     }
     
     func saveItems() {
-        let encoder = PropertyListEncoder()
         do {
-            let data = try encoder.encode(self.itemArray)
-            guard let filePath = self.dataFilePath else { return }
-            try data.write(to: filePath)
+            try context.save()
         } catch {
-            print(error)
+            print("Error saving context: \(error)")
         }
     }
     
     func loadItems() {
-        guard let dataFilePath = dataFilePath else { return }
+        let request: NSFetchRequest<Item> = Item.fetchRequest()
         do {
-            guard let data = try? Data(contentsOf: dataFilePath) else { return }
-            let decoder = PropertyListDecoder()
-            itemArray = try decoder.decode([Item].self, from: data)
+            itemArray = try context.fetch(request)
         } catch {
-            print("Error loading items: \(error)")
+            print("Error fetching data from context: \(error)")
         }
     }
 }
