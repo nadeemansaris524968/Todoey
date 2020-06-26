@@ -9,44 +9,49 @@
 import UIKit
 
 class TodoListViewController: UITableViewController {
-    var itemArray = ["Find Mike", "Buy Eggos", "Destroy Demogorgon"]
+    var itemArray: [Item] = [
+        Item(title: "Find Mike"),
+        Item(title: "Buy Eggos"),
+        Item(title: "Destroy Demogorgon")
+    ]
+    
+    let defaults = UserDefaults()
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
     }
     
-    //MARK: - Data Source methods
+    //MARK: - Table View Data Source methods
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return itemArray.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "TodoItemCell", for: indexPath)
-        cell.textLabel?.text = itemArray[indexPath.row]
+        let item = itemArray[indexPath.row]
+        cell.textLabel?.text = item.getTitle()
+        cell.accessoryType = (item.isDone()) ? .checkmark : .none
         return cell
     }
     
-    //MARK: - Delegate methods
+    //MARK: - Table View Delegate methods
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let item = itemArray[indexPath.row]
+        item.toggle()
         guard let selectedCell = tableView.cellForRow(at: indexPath) else { return }
-        
-        if selectedCell.accessoryType == .checkmark {
-            selectedCell.accessoryType = .none
-        } else {
-            selectedCell.accessoryType = .checkmark
-        }
-        
+        selectedCell.accessoryType = (item.isDone()) ? .checkmark : .none
         tableView.deselectRow(at: indexPath, animated: true)
     }
     
+    //MARK: - Nav Add Button Item method
     @IBAction func addItemPressed(_ sender: UIBarButtonItem) {
         var tField = UITextField()
         let alertVC = UIAlertController(title: "Add new Todo Item", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add", style: .default) { (action) in
             if tField.text?.trimmingCharacters(in: .whitespacesAndNewlines) != "" {
                 guard let todoItem = tField.text else { return }
-                self.itemArray.append(todoItem)
+                let item = Item(title: todoItem)
+                self.itemArray.append(item)
                 self.tableView.reloadData()
             }
         }
