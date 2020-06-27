@@ -50,11 +50,9 @@ class TodoListViewController: UITableViewController {
         let action = UIAlertAction(title: "Add", style: .default) { (action) in
             if tField.text?.trimmingCharacters(in: .whitespacesAndNewlines) != "" {
                 guard let todoItem = tField.text else { return }
-                
                 let item = Item(context: self.context)
                 item.title = todoItem
                 item.done = false
-                
                 self.itemArray.append(item)
                 self.saveItems()
                 self.tableView.reloadData()
@@ -76,12 +74,29 @@ class TodoListViewController: UITableViewController {
         }
     }
     
-    func loadItems() {
-        let request: NSFetchRequest<Item> = Item.fetchRequest()
+    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()) {
         do {
             itemArray = try context.fetch(request)
         } catch {
             print("Error fetching data from context: \(error)")
+        }
+    }
+}
+
+//MARK: - Search Bar Delegate methods
+extension TodoListViewController: UISearchBarDelegate {
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        let request: NSFetchRequest<Item> = Item.fetchRequest()
+        request.predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+        loadItems(with: request)
+        tableView.reloadData()
+    }
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchText.trimmingCharacters(in: .whitespacesAndNewlines) == "" {
+            loadItems()
+            tableView.reloadData()
         }
     }
 }
