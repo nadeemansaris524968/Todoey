@@ -16,7 +16,7 @@ class CategoryViewController: UITableViewController {
     override func viewDidLoad() {
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
         super.viewDidLoad()
-        loadItems()
+        loadCategories()
     }
     
     // MARK: - Table view data source
@@ -62,7 +62,7 @@ class CategoryViewController: UITableViewController {
         }
     }
     
-    func loadItems(with request: NSFetchRequest<Category> = Category.fetchRequest()) {
+    func loadCategories(with request: NSFetchRequest<Category> = Category.fetchRequest()) {
         do {
             categoryArray = try context.fetch(request)
         } catch {
@@ -76,7 +76,7 @@ extension CategoryViewController: UISearchBarDelegate {
         let request: NSFetchRequest<Category> = Category.fetchRequest()
         request.predicate = NSPredicate(format: "name CONTAINS[cd] %@", searchBar.text!)
         request.sortDescriptors = [NSSortDescriptor(key: "name", ascending: true)]
-        loadItems(with: request)
+        loadCategories(with: request)
         tableView.reloadData()
     }
     
@@ -85,7 +85,7 @@ extension CategoryViewController: UISearchBarDelegate {
             DispatchQueue.main.async {
                 searchBar.resignFirstResponder()
             }
-            loadItems()
+            loadCategories()
             tableView.reloadData()
         }
     }
