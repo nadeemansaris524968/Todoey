@@ -31,6 +31,19 @@ class CategoryViewController: UITableViewController {
         return cell
     }
     
+    //MARK: - Table view delegate methods
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        performSegue(withIdentifier: "goToItems", sender: self)
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "goToItems" {
+            guard let destinationVC = segue.destination as? TodoListViewController else { return }
+            guard let indexPath = tableView.indexPathForSelectedRow else { return }
+            destinationVC.selectedCategory = categoryArray[indexPath.row]
+        }
+    }
+    
     //MARK: - Nav Add Button Item method
     @IBAction func addCategoryPressed(_ sender: UIBarButtonItem) {
         var tField = UITextField()
