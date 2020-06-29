@@ -95,6 +95,9 @@ extension TodoListViewController: UISearchBarDelegate {
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         if searchText.trimmingCharacters(in: .whitespacesAndNewlines) == "" {
+            DispatchQueue.main.async {
+                searchBar.resignFirstResponder()
+            }
             loadItems()
             tableView.reloadData()
         }
